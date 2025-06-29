@@ -1,4 +1,11 @@
-import json
+try:
+    import orjson
+
+    JSONDecodeError = orjson.JSONDecodeError
+except ImportError:
+    import json as orjson
+    from json.decoder import JSONDecodeError
+
 import re
 import sqlite3
 from contextlib import contextmanager
@@ -6,7 +13,7 @@ from pathlib import Path
 from threading import RLock
 
 
-class Sagitta:
+class SagittaDB:
     def __init__(self, file_path: str | Path):
         if str(file_path) == ":memory:":
             self._db_path = ":memory:"
@@ -89,17 +96,27 @@ class Sagitta:
         return conditions, params
 
     def insert(self, document):
+        if not isinstance(document, dict):
+            raise TypeError("Document must be a dictionary")
         with self.transaction() as conn:
             cursor = conn.execute(
-                "INSERT INTO documents (data) VALUES (?)", (json.dumps(document),)
+                "INSERT INTO documents (data) VALUES (?)", (orjson.dumps(document),)
             )
             return cursor.lastrowid
 
     def insert_many(self, document_iterable):
+        def checked_generator(docs):
+            for doc in docs:
+                if not isinstance(doc, dict):
+                    raise TypeError(
+                        "All documents in the iterable must be dictionaries"
+                    )
+                yield (orjson.dumps(doc),)
+
         with self.transaction() as conn:
             conn.executemany(
                 "INSERT INTO documents (data) VALUES (?)",
-                ((json.dumps(doc),) for doc in document_iterable),
+                checked_generator(document_iterable),
             )
 
     def remove(self, filter_dict):
@@ -144,8 +161,8 @@ class Sagitta:
             for row in cursor:
                 # For count() and other non-json results, row[0] might not be json
                 try:
-                    yield json.loads(row[0])
-                except (json.JSONDecodeError, TypeError):
+                    yield orjson.loads(row[0])
+                except (JSONDecodeError, TypeError):
                     yield row[0]
 
     def _build_query_with_limit_offset(self, base_query, base_params, limit, offset):

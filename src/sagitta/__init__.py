@@ -1,3 +1,3 @@
-from .sagitta import Sagitta
+from .sagitta import SagittaDB
 
-__all__ = ["Sagitta"]
+__all__ = ["SagittaDB"]
