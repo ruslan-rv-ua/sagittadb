@@ -7,7 +7,10 @@ authors = [
     { name = "Ruslan Iskov", email = "ruslan.rv.ua+github@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = [
+dependencies = []
+
+[project.optional-dependencies]
+orjson = [
     "orjson>=3.10.18",
 ]
 
