@@ -1,3 +1,5 @@
+"""A lightweight, document-oriented database using SQLite."""
+
 try:
     import orjson
 
@@ -8,20 +10,22 @@ except ImportError:
 
 import re
 import sqlite3
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from threading import RLock
 from typing import Any
 
-try:
-    from collections.abc import Iterable, Iterator, Sequence
-except ImportError:
-    from collections.abc import Iterable
-    from typing import Iterator, Sequence
-
 
 class SagittaDB:
+    """A lightweight, document-oriented database using SQLite."""
+
     def __init__(self, file_path: str | Path) -> None:
+        """Initializes the SagittaDB database.
+
+        Args:
+            file_path: The path to the database file, or ":memory:" for an in-memory database.
+        """
         if str(file_path) == ":memory:":
             self._db_path = ":memory:"
         else:
@@ -33,7 +37,11 @@ class SagittaDB:
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Cursor]:
-        """A context manager for database transactions."""
+        """A context manager for database transactions.
+
+        Yields:
+            A database cursor for the transaction.
+        """
         conn = self._connection.cursor()
         with self._lock:
             try:
@@ -46,6 +54,7 @@ class SagittaDB:
                 conn.close()
 
     def _initialize_db(self) -> None:
+        """Initializes the database schema."""
         with self.transaction() as conn:
             conn.execute(
                 """
@@ -66,7 +75,11 @@ class SagittaDB:
             conn.execute("PRAGMA journal_mode=WAL;")
 
     def create_index(self, key: str) -> None:
-        """Creates an index on a JSON key for faster searching."""
+        """Creates an index on a JSON key for faster searching.
+
+        Args:
+            key: The key to create an index on.
+        """
         if not key or not isinstance(key, str) or not key.isidentifier():
             raise ValueError("key must be a valid non-empty string identifier")
         index_name = f"idx_json_{key}"
@@ -79,6 +92,12 @@ class SagittaDB:
 
     @staticmethod
     def _add_regexp_support(conn: sqlite3.Connection) -> None:
+        """Adds REGEXP support to the SQLite connection.
+
+        Args:
+            conn: The SQLite connection object.
+        """
+
         def regexp(pattern, value):
             return re.search(pattern, value) is not None
 
@@ -86,7 +105,14 @@ class SagittaDB:
 
     @staticmethod
     def _build_filter_clause(filter_dict: dict[str, Any]) -> tuple[str, list[Any]]:
-        """Builds the WHERE clause and parameters for a query."""
+        """Builds the WHERE clause and parameters for a query.
+
+        Args:
+            filter_dict: A dictionary of key-value pairs to filter by.
+
+        Returns:
+            A tuple containing the WHERE clause and a list of parameters.
+        """
         if not isinstance(filter_dict, dict) or not filter_dict:
             raise ValueError("filter_dict must be a non-empty dict")
 
@@ -103,6 +129,14 @@ class SagittaDB:
         return conditions, params
 
     def insert(self, document: dict[str, Any]) -> int | None:
+        """Inserts a single document into the database.
+
+        Args:
+            document: The document to insert.
+
+        Returns:
+            The ID of the inserted document.
+        """
         if not isinstance(document, dict):
             raise TypeError("Document must be a dictionary")
         with self.transaction() as conn:
@@ -112,6 +146,12 @@ class SagittaDB:
             return cursor.lastrowid
 
     def insert_many(self, document_iterable: Iterable[dict[str, Any]]) -> None:
+        """Inserts multiple documents into the database.
+
+        Args:
+            document_iterable: An iterable of documents to insert.
+        """
+
         def checked_generator(docs):
             for doc in docs:
                 if not isinstance(doc, dict):
@@ -127,6 +167,14 @@ class SagittaDB:
             )
 
     def remove(self, filter_dict: dict[str, Any]) -> int:
+        """Removes documents matching the filter.
+
+        Args:
+            filter_dict: A dictionary of key-value pairs to filter by.
+
+        Returns:
+            The number of documents removed.
+        """
         # Remove by dict: all key-value pairs must match
         where_clause, params = self._build_filter_clause(filter_dict)
         query = f"DELETE FROM documents WHERE {where_clause}"
@@ -135,6 +183,15 @@ class SagittaDB:
             return result.rowcount
 
     def update(self, filter_dict: dict[str, Any], update_dict: dict[str, Any]) -> int:
+        """Updates documents matching the filter.
+
+        Args:
+            filter_dict: A dictionary of key-value pairs to filter by.
+            update_dict: A dictionary of key-value pairs to update.
+
+        Returns:
+            The number of documents updated.
+        """
         # Update documents matching filter_dict with values from update_dict
         where_clause, where_params = self._build_filter_clause(filter_dict)
 
@@ -158,11 +215,25 @@ class SagittaDB:
             return result.rowcount
 
     def purge(self) -> bool:
+        """Removes all documents from the database.
+
+        Returns:
+            True if the operation was successful.
+        """
         with self.transaction() as conn:
             conn.execute("DELETE FROM documents")
         return True
 
     def _execute_query(self, query: str, params: Sequence[Any] = ()) -> Iterator[Any]:
+        """Executes a query that returns multiple rows.
+
+        Args:
+            query: The SQL query to execute.
+            params: The parameters to bind to the query.
+
+        Yields:
+            The rows from the query result.
+        """
         with self.transaction() as conn:
             cursor = conn.execute(query, params)
             for row in cursor:
@@ -179,6 +250,17 @@ class SagittaDB:
         limit: int | None,
         offset: int,
     ) -> tuple[str, list[Any]]:
+        """Adds LIMIT and OFFSET clauses to a query.
+
+        Args:
+            base_query: The base SQL query.
+            base_params: The parameters for the base query.
+            limit: The maximum number of rows to return.
+            offset: The number of rows to skip.
+
+        Returns:
+            A tuple containing the modified query and parameters.
+        """
         if limit is not None:
             base_query += " LIMIT ? OFFSET ?"
             base_params.extend([limit, offset])
@@ -188,6 +270,15 @@ class SagittaDB:
         return base_query, base_params
 
     def all(self, limit: int | None = None, offset: int = 0) -> Iterator[Any]:
+        """Retrieves all documents from the database.
+
+        Args:
+            limit: The maximum number of documents to return.
+            offset: The number of documents to skip.
+
+        Yields:
+            The documents from the database.
+        """
         query = "SELECT data FROM documents"
         params = []
         query, params = self._build_query_with_limit_offset(
@@ -201,6 +292,16 @@ class SagittaDB:
         limit: int | None = None,
         offset: int = 0,
     ) -> Iterator[Any]:
+        """Searches for documents matching a filter.
+
+        Args:
+            filter_dict: A dictionary of key-value pairs to filter by.
+            limit: The maximum number of documents to return.
+            offset: The number of documents to skip.
+
+        Yields:
+            The documents matching the filter.
+        """
         where_clause, params = self._build_filter_clause(filter_dict)
         query = f"SELECT data FROM documents WHERE {where_clause}"
         query, params = self._build_query_with_limit_offset(
@@ -215,6 +316,17 @@ class SagittaDB:
         limit: int | None = None,
         offset: int = 0,
     ) -> Iterator[Any]:
+        """Searches for documents where a key matches a regular expression.
+
+        Args:
+            key: The key to search on.
+            pattern: The regular expression pattern to match.
+            limit: The maximum number of documents to return.
+            offset: The number of documents to skip.
+
+        Yields:
+            The documents matching the search.
+        """
         if not key or not isinstance(key, str):
             raise ValueError("key must be a non-empty string")
         if not pattern or not isinstance(pattern, str):
@@ -231,6 +343,15 @@ class SagittaDB:
         yield from self._execute_query(query, params)
 
     def find_any(self, key: str, values: Iterable[Any]) -> Iterator[Any]:
+        """Finds documents where a key has any of the given values.
+
+        Args:
+            key: The key to search on.
+            values: An iterable of values to match.
+
+        Yields:
+            The documents matching the search.
+        """
         value_list = list(values)
         if not key or not isinstance(key, str) or not key.isidentifier():
             raise ValueError("key must be a valid non-empty string identifier")
@@ -251,14 +372,29 @@ class SagittaDB:
         query: str,
         params: Sequence[Any] = (),
     ) -> Any:
-        """Execute a query that returns a single scalar value."""
+        """Execute a query that returns a single scalar value.
+
+        Args:
+            query: The SQL query to execute.
+            params: The parameters to bind to the query.
+
+        Returns:
+            The scalar result of the query.
+        """
         with self.transaction() as conn:
             cursor = conn.execute(query, params)
             result = cursor.fetchone()
             return result[0] if result else None
 
     def count(self, filter_dict: dict[str, Any] | None = None) -> int:
-        """Counts documents, optionally matching a filter."""
+        """Counts documents, optionally matching a filter.
+
+        Args:
+            filter_dict: A dictionary of key-value pairs to filter by.
+
+        Returns:
+            The number of documents matching the filter.
+        """
         if filter_dict is None:
             query = "SELECT COUNT(*) FROM documents"
             params = []
@@ -269,5 +405,6 @@ class SagittaDB:
         return self._execute_scalar_query(query, params) or 0
 
     def close(self) -> None:
+        """Closes the database connection."""
         with self._lock:
             self._connection.close()
