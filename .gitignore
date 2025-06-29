@@ -15,3 +15,33 @@ wheels/
 *.db-wal
 *.sqlite
 *.sqlite3
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python version management
+.python-version
+
+# UV lock file (optional - depends on your workflow)
+# uv.lock
+
+# Temporary and debug files
+debug_*.py
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
