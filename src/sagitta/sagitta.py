@@ -1,7 +1,6 @@
 import json
 import re
 import sqlite3
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from pathlib import Path
 from threading import RLock
@@ -14,7 +13,6 @@ class Sagitta:
         else:
             self._db_path = Path(file_path).resolve()
         self._lock = RLock()
-        self.executor = ThreadPoolExecutor(max_workers=5)
         self._connection = sqlite3.connect(self._db_path, check_same_thread=False)
         self._add_regexp_support(self._connection)
         self._initialize_db()
@@ -175,7 +173,7 @@ class Sagitta:
         )
         yield from self._execute_query(query, params)
 
-    def search_pattern(self, key, pattern, limit=100, offset=0):
+    def search_pattern(self, key, pattern, limit=None, offset=0):
         if not key or not isinstance(key, str):
             raise ValueError("key must be a non-empty string")
         if not pattern or not isinstance(pattern, str):
@@ -207,6 +205,13 @@ class Sagitta:
         """
         yield from self._execute_query(query, value_list)
 
+    def _execute_scalar_query(self, query, params=()):
+        """Execute a query that returns a single scalar value."""
+        with self.transaction() as conn:
+            cursor = conn.execute(query, params)
+            result = cursor.fetchone()
+            return result[0] if result else None
+
     def count(self, filter_dict=None):
         """Counts documents, optionally matching a filter."""
         if filter_dict is None:
@@ -216,13 +221,8 @@ class Sagitta:
             conditions, params = self._build_filter_clause(filter_dict)
             query = f"SELECT COUNT(*) FROM documents WHERE {conditions}"
 
-        # The result of _execute_query is a generator, get the first (and only) item.
-        return next(self._execute_query(query, params), 0)
-
-    def execute_async(self, func, *args, **kwargs):
-        return self.executor.submit(func, *args, **kwargs)
+        return self._execute_scalar_query(query, params) or 0
 
     def close(self):
-        self.executor.shutdown()
         with self._lock:
             self._connection.close()
