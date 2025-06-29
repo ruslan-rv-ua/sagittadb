@@ -1,7 +1,7 @@
 """A lightweight, document-oriented database using SQLite."""
 
 try:
-    import orjson
+    import orjson  # type: ignore
 
     JSONDecodeError = orjson.JSONDecodeError
 except ImportError:

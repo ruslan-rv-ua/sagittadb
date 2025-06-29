@@ -2,7 +2,6 @@
 
 <div align="center">
 
-![SagittaDB Logo](https://img.shields.io/badge/SagittaDB-🏹-blue?style=for-the-badge)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-orange?style=for-the-badge)](pyproject.toml)
 [![Python](https://img.shields.io/badge/python-3.13+-blue?style=for-the-badge)](https://python.org)
@@ -24,28 +23,11 @@
 - 🧵 **Thread-Safe**: Built-in locking for concurrent access
 - 📦 **Zero Dependencies**: Pure Python with optional orjson for better performance
 
-## 🚀 Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/ruslan-rv-ua/sagittadb.git
-
-# Navigate to project directory
-cd sagittadb
-
-# Install in development mode
-pip install -e .
-
-# Optional: Install with orjson for better performance
-pip install -e ".[orjson]"
-```
-
 ## 📦 Installation
 
 ### Prerequisites
 
 - Python 3.13 or higher
-- pip
 - (Optional) [uv](https://github.com/astral-sh/uv) — ultra-fast Python package manager
 
 ### Install via pip
@@ -139,11 +121,11 @@ git clone https://github.com/ruslan-rv-ua/sagittadb.git
 cd sagittadb
 
 # Create virtual environment
-python -m venv venv
+python -m venv .venv
 # On Windows:
-venv\Scripts\activate
+.venv\Scripts\activate
 # On Unix/macOS:
-# source venv/bin/activate
+# source .venv/bin/activate
 
 # Install in development mode with dev dependencies
 pip install -e ".[dev]"
@@ -153,26 +135,8 @@ pip install -e ".[dev]"
 uv pip install -e ".[dev]"
 
 # Run tests
-pytest
-
-# Or run tests with uv
-uv pip run pytest
-
-# Run tests with coverage
-pytest --cov=sagittadb
-
-# Or with uv
-uv pip run pytest -- --cov=sagittadb
-```
-
-### Project Structure
-
-```
-sagittadb/
-├── src/sagittadb/    # Source code
-├── tests/            # Test files
-├── examples/         # Example implementations
-└── pyproject.toml    # Project configuration
+uv run pytest
+uv run pytest --cov=sagittadb
 ```
 
 ## 🧪 Testing
@@ -203,17 +167,6 @@ We welcome contributions! Here's how you can help:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🌟 Acknowledgments
-
-- Thanks to all contributors who have helped shape Sagitta
-- Inspired by the constellation Sagitta (The Arrow)
-- Built with ❤️ by the development team
-
-## 📞 Support
-
-- � Issues: [GitHub Issues](https://github.com/ruslan-rv-ua/sagittadb/issues)
-- � Feature Requests: [GitHub Discussions](https://github.com/ruslan-rv-ua/sagittadb/discussions)
 
 ---
 
