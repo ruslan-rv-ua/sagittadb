@@ -11,10 +11,17 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 from threading import RLock
+from typing import Any
+
+try:
+    from collections.abc import Iterable, Iterator, Sequence
+except ImportError:
+    from collections.abc import Iterable
+    from typing import Iterator, Sequence
 
 
 class SagittaDB:
-    def __init__(self, file_path: str | Path):
+    def __init__(self, file_path: str | Path) -> None:
         if str(file_path) == ":memory:":
             self._db_path = ":memory:"
         else:
@@ -25,7 +32,7 @@ class SagittaDB:
         self._initialize_db()
 
     @contextmanager
-    def transaction(self):
+    def transaction(self) -> Iterator[sqlite3.Cursor]:
         """A context manager for database transactions."""
         conn = self._connection.cursor()
         with self._lock:
@@ -38,7 +45,7 @@ class SagittaDB:
             finally:
                 conn.close()
 
-    def _initialize_db(self):
+    def _initialize_db(self) -> None:
         with self.transaction() as conn:
             conn.execute(
                 """
@@ -58,7 +65,7 @@ class SagittaDB:
             )
             conn.execute("PRAGMA journal_mode=WAL;")
 
-    def create_index(self, key):
+    def create_index(self, key: str) -> None:
         """Creates an index on a JSON key for faster searching."""
         if not key or not isinstance(key, str) or not key.isidentifier():
             raise ValueError("key must be a valid non-empty string identifier")
@@ -71,14 +78,14 @@ class SagittaDB:
             conn.execute(query)
 
     @staticmethod
-    def _add_regexp_support(conn):
+    def _add_regexp_support(conn: sqlite3.Connection) -> None:
         def regexp(pattern, value):
             return re.search(pattern, value) is not None
 
         conn.create_function("REGEXP", 2, regexp)
 
     @staticmethod
-    def _build_filter_clause(filter_dict):
+    def _build_filter_clause(filter_dict: dict[str, Any]) -> tuple[str, list[Any]]:
         """Builds the WHERE clause and parameters for a query."""
         if not isinstance(filter_dict, dict) or not filter_dict:
             raise ValueError("filter_dict must be a non-empty dict")
@@ -95,7 +102,7 @@ class SagittaDB:
         params = [filter_dict[key] for key in keys]
         return conditions, params
 
-    def insert(self, document):
+    def insert(self, document: dict[str, Any]) -> int | None:
         if not isinstance(document, dict):
             raise TypeError("Document must be a dictionary")
         with self.transaction() as conn:
@@ -104,7 +111,7 @@ class SagittaDB:
             )
             return cursor.lastrowid
 
-    def insert_many(self, document_iterable):
+    def insert_many(self, document_iterable: Iterable[dict[str, Any]]) -> None:
         def checked_generator(docs):
             for doc in docs:
                 if not isinstance(doc, dict):
@@ -119,7 +126,7 @@ class SagittaDB:
                 checked_generator(document_iterable),
             )
 
-    def remove(self, filter_dict):
+    def remove(self, filter_dict: dict[str, Any]) -> int:
         # Remove by dict: all key-value pairs must match
         where_clause, params = self._build_filter_clause(filter_dict)
         query = f"DELETE FROM documents WHERE {where_clause}"
@@ -127,7 +134,7 @@ class SagittaDB:
             result = conn.execute(query, params)
             return result.rowcount
 
-    def update(self, filter_dict, update_dict):
+    def update(self, filter_dict: dict[str, Any], update_dict: dict[str, Any]) -> int:
         # Update documents matching filter_dict with values from update_dict
         where_clause, where_params = self._build_filter_clause(filter_dict)
 
@@ -150,12 +157,12 @@ class SagittaDB:
             result = conn.execute(query, set_params + where_params)
             return result.rowcount
 
-    def purge(self):
+    def purge(self) -> bool:
         with self.transaction() as conn:
             conn.execute("DELETE FROM documents")
         return True
 
-    def _execute_query(self, query, params=()):
+    def _execute_query(self, query: str, params: Sequence[Any] = ()) -> Iterator[Any]:
         with self.transaction() as conn:
             cursor = conn.execute(query, params)
             for row in cursor:
@@ -165,7 +172,13 @@ class SagittaDB:
                 except (JSONDecodeError, TypeError):
                     yield row[0]
 
-    def _build_query_with_limit_offset(self, base_query, base_params, limit, offset):
+    def _build_query_with_limit_offset(
+        self,
+        base_query: str,
+        base_params: list[Any],
+        limit: int | None,
+        offset: int,
+    ) -> tuple[str, list[Any]]:
         if limit is not None:
             base_query += " LIMIT ? OFFSET ?"
             base_params.extend([limit, offset])
@@ -174,7 +187,7 @@ class SagittaDB:
             base_params.append(offset)
         return base_query, base_params
 
-    def all(self, limit=None, offset=0):
+    def all(self, limit: int | None = None, offset: int = 0) -> Iterator[Any]:
         query = "SELECT data FROM documents"
         params = []
         query, params = self._build_query_with_limit_offset(
@@ -182,7 +195,12 @@ class SagittaDB:
         )
         yield from self._execute_query(query, params)
 
-    def search(self, filter_dict, limit=None, offset=0):
+    def search(
+        self,
+        filter_dict: dict[str, Any],
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> Iterator[Any]:
         where_clause, params = self._build_filter_clause(filter_dict)
         query = f"SELECT data FROM documents WHERE {where_clause}"
         query, params = self._build_query_with_limit_offset(
@@ -190,7 +208,13 @@ class SagittaDB:
         )
         yield from self._execute_query(query, params)
 
-    def search_pattern(self, key, pattern, limit=None, offset=0):
+    def search_pattern(
+        self,
+        key: str,
+        pattern: str,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> Iterator[Any]:
         if not key or not isinstance(key, str):
             raise ValueError("key must be a non-empty string")
         if not pattern or not isinstance(pattern, str):
@@ -206,7 +230,7 @@ class SagittaDB:
         )
         yield from self._execute_query(query, params)
 
-    def find_any(self, key, values):
+    def find_any(self, key: str, values: Iterable[Any]) -> Iterator[Any]:
         value_list = list(values)
         if not key or not isinstance(key, str) or not key.isidentifier():
             raise ValueError("key must be a valid non-empty string identifier")
@@ -222,14 +246,18 @@ class SagittaDB:
         """
         yield from self._execute_query(query, value_list)
 
-    def _execute_scalar_query(self, query, params=()):
+    def _execute_scalar_query(
+        self,
+        query: str,
+        params: Sequence[Any] = (),
+    ) -> Any:
         """Execute a query that returns a single scalar value."""
         with self.transaction() as conn:
             cursor = conn.execute(query, params)
             result = cursor.fetchone()
             return result[0] if result else None
 
-    def count(self, filter_dict=None):
+    def count(self, filter_dict: dict[str, Any] | None = None) -> int:
         """Counts documents, optionally matching a filter."""
         if filter_dict is None:
             query = "SELECT COUNT(*) FROM documents"
@@ -240,6 +268,6 @@ class SagittaDB:
 
         return self._execute_scalar_query(query, params) or 0
 
-    def close(self):
+    def close(self) -> None:
         with self._lock:
             self._connection.close()
