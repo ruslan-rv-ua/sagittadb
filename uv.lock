@@ -26,12 +26,15 @@ wheels = [
 ]
 
 [[package]]
-name = "SagittaDB"
+name = "sagittadb"
 version = "0.1.0"
 source = { editable = "." }
-dependencies = [
+
+[package.optional-dependencies]
+orjson = [
     { name = "orjson" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "orjson", specifier = ">=3.10.18" }]
+requires-dist = [{ name = "orjson", marker = "extra == 'orjson'", specifier = ">=3.10.18" }]
+provides-extras = ["orjson"]
