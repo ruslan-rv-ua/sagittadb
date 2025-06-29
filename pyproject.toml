@@ -13,7 +13,17 @@ dependencies = []
 orjson = [
     "orjson>=3.10.18",
 ]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+]
