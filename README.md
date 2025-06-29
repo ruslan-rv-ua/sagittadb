@@ -19,19 +19,19 @@
 
 - 🎯 **Document-Oriented**: Store and query JSON documents with ease
 - ⚡ **SQLite Backend**: Built on reliable SQLite for performance and ACID compliance
-- � **Flexible Querying**: Search by exact match, patterns, or multiple values
-- � **Indexing Support**: Create custom indexes for optimized queries
+- 🔍 **Flexible Querying**: Search by exact match, patterns, or multiple values
+- 📊 **Indexing Support**: Create custom indexes for optimized queries
 - 🧵 **Thread-Safe**: Built-in locking for concurrent access
-- � **Zero Dependencies**: Pure Python with optional orjson for better performance
+- 📦 **Zero Dependencies**: Pure Python with optional orjson for better performance
 
 ## 🚀 Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sagitta.git
+git clone https://github.com/ruslan-rv-ua/sagittadb.git
 
 # Navigate to project directory
-cd sagitta
+cd sagittadb
 
 # Install in development mode
 pip install -e .
@@ -46,6 +46,7 @@ pip install -e ".[orjson]"
 
 - Python 3.13 or higher
 - pip
+- (Optional) [uv](https://github.com/astral-sh/uv) — ultra-fast Python package manager
 
 ### Install via pip
 
@@ -53,11 +54,20 @@ pip install -e ".[orjson]"
 pip install sagittadb
 ```
 
+### Install via uv (recommended for fast installs)
+
+```bash
+uv add sagittadb
+
+# Optional: Install with orjson for better performance
+uv add sagittadb[orjson]
+```
+
 ### Install from source
 
 ```bash
-git clone https://github.com/yourusername/sagitta.git
-cd sagitta
+git clone https://github.com/ruslan-rv-ua/sagittadb.git
+cd sagittadb
 pip install -e .
 ```
 
@@ -117,16 +127,7 @@ db.close()
 
 ## 📚 Documentation
 
-For detailed documentation, visit our [Wiki](https://github.com/yourusername/sagitta/wiki) or check out the [API Reference](docs/api.md).
-
-### Key Components
-
-| Component | Description | Status |
-|-----------|-------------|--------|
-| Core Engine | Main database operations | ✅ Complete |
-| Query System | Document search and filtering | ✅ Complete |
-| Indexing | Performance optimization | ✅ Complete |
-| Concurrency | Thread-safe operations | ✅ Complete |
+For examples of usage, check out the `examples/` directory in this repository.
 
 ## 🛠️ Development
 
@@ -134,30 +135,42 @@ For detailed documentation, visit our [Wiki](https://github.com/yourusername/sag
 
 ```bash
 # Clone and setup
-git clone https://github.com/yourusername/sagitta.git
-cd sagitta
+git clone https://github.com/ruslan-rv-ua/sagittadb.git
+cd sagittadb
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# On Windows:
+venv\Scripts\activate
+# On Unix/macOS:
+# source venv/bin/activate
 
-# Install in development mode
-pip install -e .
+# Install in development mode with dev dependencies
+pip install -e ".[dev]"
+
+
+# Or use uv for faster setup
+uv pip install -e ".[dev]"
 
 # Run tests
-python -m pytest
+pytest
+
+# Or run tests with uv
+uv pip run pytest
 
 # Run tests with coverage
-python -m pytest --cov=sagittadb
+pytest --cov=sagittadb
+
+# Or with uv
+uv pip run pytest -- --cov=sagittadb
 ```
 
 ### Project Structure
 
 ```
-sagitta/
+sagittadb/
 ├── src/sagittadb/    # Source code
 ├── tests/            # Test files
-├── docs/             # Documentation
 ├── examples/         # Example implementations
 └── pyproject.toml    # Project configuration
 ```
@@ -166,18 +179,18 @@ sagitta/
 
 ```bash
 # Run all tests
-python -m pytest
+pytest
 
 # Run with coverage
-python -m pytest --cov=sagittadb
+pytest --cov=sagittadb
 
 # Run specific test module
-python -m pytest tests/test_sagittadb.py
+pytest tests/test_basic.py
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Here's how you can help:
 
 ### How to Contribute
 
@@ -186,15 +199,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📊 Roadmap
-
-- [x] Core functionality
-- [x] Basic documentation
-- [ ] Advanced analytics
-- [ ] Plugin system
-- [ ] Mobile optimization
-- [ ] Cloud integration
 
 ## 📄 License
 
@@ -208,9 +212,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 📧 Email: support@sagitta.dev
-- 💬 Discord: [Join our community](https://discord.gg/sagitta)
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/sagitta/issues)
+- � Issues: [GitHub Issues](https://github.com/ruslan-rv-ua/sagittadb/issues)
+- � Feature Requests: [GitHub Discussions](https://github.com/ruslan-rv-ua/sagittadb/discussions)
 
 ---
 
