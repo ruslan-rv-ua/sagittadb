@@ -3,7 +3,7 @@
 <div align="center">
 
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-orange?style=for-the-badge)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.1.0-orange?style=for-the-badge)](https://pypi.org/project/sagittadb/)
 [![Python](https://img.shields.io/badge/python-3.13+-blue?style=for-the-badge)](https://python.org)
 
 *A lightweight, document-oriented database using SQLite*
@@ -50,7 +50,7 @@ uv add sagittadb[orjson]
 ```bash
 git clone https://github.com/ruslan-rv-ua/sagittadb.git
 cd sagittadb
-pip install -e .
+pip install .
 ```
 
 ## 🎯 Usage
@@ -81,11 +81,7 @@ for user in db.search_pattern("name", r"^A"):
 # Count documents
 total_users = db.count()
 ny_users = db.count({"city": "New York"})
-```
 
-### Advanced Usage
-
-```python
 # Create indexes for better performance
 db.create_index("city")
 db.create_index("age")
@@ -137,19 +133,6 @@ uv pip install -e ".[dev]"
 # Run tests
 uv run pytest
 uv run pytest --cov=sagittadb
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=sagittadb
-
-# Run specific test module
-pytest tests/test_basic.py
 ```
 
 ## 🤝 Contributing
