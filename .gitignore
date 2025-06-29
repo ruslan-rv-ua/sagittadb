@@ -45,3 +45,4 @@ debug_*.py
 .Trashes
 ehthumbs.db
 Thumbs.db
+.coverage
